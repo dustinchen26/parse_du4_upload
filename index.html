@@ -144,6 +144,9 @@
             }
 
             document.getElementById('output').innerHTML = output;
+            // 將結果輸出到output.txt文件中，去除HTML標籤
+            download(output.replace(/<[^>]+>/g, ''), 'output.txt', 'text/plain');
+                        
             document.getElementById('bar').style.width = '100%';
             document.getElementById('bar').innerHTML = '100%';
         }
@@ -258,6 +261,14 @@
 
         function printToPDF() {
             window.print();
+        }
+
+        function download(content, fileName, contentType) {
+            var a = document.createElement("a");
+            var file = new Blob([content], { type: contentType });
+            a.href = URL.createObjectURL(file);
+            a.download = fileName;
+            a.click();
         }
     </script>
 </head>
