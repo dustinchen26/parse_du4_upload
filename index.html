@@ -1,4 +1,4 @@
-<!-- 
+<!--
   Copyright © [2023] [Dustin_Chen]. All rights reserved.
   Author: Dustin_Chen
   Email:  Dustin_Chen@compal.com or chuhpsdustin@gmail.com
@@ -93,34 +93,49 @@
         }
     </style>
     <script>
-        function parseFile(file) {
-            var reader = new FileReader();
+        var chunkSize = 50 * 1024 * 1024; // 50MB (Increased chunk size)
+        var fileSize = 0;
+        var totalChunks = 0;
+        var processedChunks = 0;
 
-            // Check file size
-            var maxSizeMB = 455;
-            var maxSizeBytes = maxSizeMB * 1024 * 1024; // Convert MB to bytes
-            if (file.size > maxSizeBytes) {
-                alert('檔案超過 ' + maxSizeMB + ' MB，不允許上傳。');
-                return; // Stop further execution
+        function parseFile(file) {
+            fileSize = file.size;
+            totalChunks = Math.ceil(fileSize / chunkSize);
+            processedChunks = 0;
+
+            var offset = 0;
+            var chunkReaderBlock = null;
+
+            function readChunk() {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    if (e.target.error == null) {
+                        offset += e.target.result.length;
+                        parseContent(e.target.result);
+
+                        processedChunks++;
+                        updateProgress(processedChunks, totalChunks);
+
+                        if (offset < fileSize) {
+                            setTimeout(readChunk, 0); // 使用 setTimeout 将 readChunk() 推到任务队列的末尾，以避免一次性占用太多内存
+                        }
+                    } else {
+                        console.log("Read error: " + e.target.error);
+                        return;
+                    }
+                };
+
+                var chunk = file.slice(offset, offset + chunkSize);
+                reader.readAsText(chunk);
             }
 
-            reader.onloadstart = function (e) {
-                document.getElementById('uploadText').innerHTML = 'Uploading...';
-            };
-            reader.onprogress = function (e) {
-                if (e.lengthComputable) {
-                    var progress = Math.round((e.loaded / e.total) * 100);
-                    document.getElementById('uploadText').innerHTML = 'Uploading ' + progress + '%';
-                    document.getElementById('bar').style.width = progress + '%';
-                    document.getElementById('bar').innerHTML = progress + '%';
-                }
-            };
-            reader.onload = function (e) {
-                document.getElementById('uploadText').innerHTML = 'Upload Complete';
-                var inputText = e.target.result;
-                parseContent(inputText);
-            };
-            reader.readAsText(file);
+            readChunk();
+        }
+
+        function updateProgress(processed, total) {
+            var percent = processed / total * 100;
+            document.getElementById('bar').style.width = percent + '%';
+            document.getElementById('bar').innerHTML = percent.toFixed(0) + '%';
         }
 
         function parseContent(inputText) {
@@ -152,12 +167,8 @@
                 }
             }
 
-            document.getElementById('output').innerHTML = output;
-            // 將結果輸出到output.txt文件中，去除HTML標籤
-            download(output.replace(/<[^>]+>/g, ''), 'output.txt', 'text/plain');
-                        
-            document.getElementById('bar').style.width = '100%';
-            document.getElementById('bar').innerHTML = '100%';
+            var currentOutput = document.getElementById('output').innerHTML;
+            document.getElementById('output').innerHTML = currentOutput + output;
         }
 
         function parseUEData(lines, index) {
@@ -192,7 +203,6 @@
 
                 index++;
             }
-
 
             return output;
         }
@@ -271,14 +281,6 @@
         function printToPDF() {
             window.print();
         }
-
-        function download(content, fileName, contentType) {
-            var a = document.createElement("a");
-            var file = new Blob([content], { type: contentType });
-            a.href = URL.createObjectURL(file);
-            a.download = fileName;
-            a.click();
-        }
     </script>
 </head>
 
@@ -297,6 +299,8 @@
             <div id="progress-container">
                 <div id="uploadText">Please upload the du_stats_XXX.txt file:</div>
                 <input type="file" id="fileInput" accept=".txt" onchange="parseFile(this.files[0])">
+                <!-- Add a loading spinner -->
+                <div class="loader"></div>
                 <div id="progress">
                     <div id="bar"></div>
                 </div>
