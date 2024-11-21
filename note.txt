@@ -1,3 +1,15 @@
+修改底下html，如果遇到空白行或錯誤，可以跳過繼續底下解析
+錯誤訊息:
+index.html:212 Parsing Cell Data at Line 523364:  17361   1         0        10        3         10        3           23          0         0         0           0           0         0       1           8              7964      0        7963          0             0            10      9       0       2007      2003    0       4       0       0         0         0         
+index.html:256 Uncaught TypeError: Cannot read properties of undefined (reading 'padEnd')
+    at parseCellData (index.html:256:36)
+    at parseContent (index.html:165:35)
+    at reader.onload (index.html:114:25)
+parseCellData @ index.html:256
+parseContent @ index.html:165
+reader.onload @ index.html:114Understand this errorAI
+
+html如下:
 <!--
   Copyright © [2023] [Dustin_Chen]. All rights reserved.
   Author: Dustin_Chen
@@ -210,46 +222,27 @@
         function parseCellData(lines, index) {
             var output = "";
             console.log("Parsing Cell Data at Line " + (index + 1) + ": ", lines[index]);
-    
-    // Check if the line is empty or malformed
-    if (lines[index].trim() === "") {
-        return output;  // Skip empty line
-    }
-
             var values = lines[index].trim().split(/\s+/);
-    
-    // Ensure that we have enough columns to prevent out of bounds errors
-    if (values.length < 23) {
-        console.log("Skipping malformed line at " + (index + 1));
-        return output;  // Skip lines that don't have enough values
-    }
-
             var ueId = values[0].padEnd(8);
             var ACK_TB0 = values[5].padEnd(8);
             var NACK_TB0 = values[6].padEnd(8);
-
             try {
                 var dl_bler = parseFloat(NACK_TB0) / (parseFloat(ACK_TB0) + parseFloat(NACK_TB0));
                 dl_bler = isNaN(dl_bler) ? "NaN" : dl_bler.toFixed(4);
                 dl_bler = dl_bler.toString().padEnd(8);
             } catch (error) {
                 var dl_bler = "NaN".padEnd(8);
-        console.log("Error calculating DL-BLER at line " + (index + 1), error);
             }
-
             var dlMcs = values[13].padEnd(8);
             var ulCrcSucc = values[18].padEnd(8);
             var ulCrcFail = values[19].padEnd(8);
-
             try {
                 var ul_bler = parseFloat(ulCrcFail) / (parseFloat(ulCrcSucc) + parseFloat(ulCrcFail));
                 ul_bler = isNaN(ul_bler) ? "NaN" : ul_bler.toFixed(4);
                 ul_bler = ul_bler.toString().padEnd(8);
             } catch (error) {
                 var ul_bler = "NaN".padEnd(8);
-        console.log("Error calculating UL-BLER at line " + (index + 1), error);
             }
-
             var ulMcs = values[22].padEnd(8);
 
             output += "<span class='ue-id'>UE-ID=" + ueId + "</span>ACK-TB[0]=" + ACK_TB0 + "NACK-TB[0]=" + NACK_TB0 +
@@ -261,37 +254,26 @@
 
             index++;
             while (index < lines.length && /^\d/.test(lines[index].trim())) {
-        // Skip empty or malformed lines
-        if (lines[index].trim() === "" || lines[index].split(/\s+/).length < 23) {
-            index++;
-            continue;
-        }
-
                 values = lines[index].trim().split(/\s+/);
                 ueId = values[0].padEnd(8);
                 ACK_TB0 = values[5].padEnd(8);
                 NACK_TB0 = values[6].padEnd(8);
-
                 try {
                     var dl_bler = parseFloat(NACK_TB0) / (parseFloat(ACK_TB0) + parseFloat(NACK_TB0));
                     dl_bler = isNaN(dl_bler) ? "NaN" : dl_bler.toFixed(4);
                     dl_bler = dl_bler.toString().padEnd(8);
                 } catch (error) {
                     var dl_bler = "NaN".padEnd(8);
-            console.log("Error calculating DL-BLER at line " + (index + 1), error);
                 }
-
                 dlMcs = values[13].padEnd(8);
                 ulCrcSucc = values[18].padEnd(8);
                 ulCrcFail = values[19].padEnd(8);
-
                 try {
                     var ul_bler = parseFloat(ulCrcFail) / (parseFloat(ulCrcSucc) + parseFloat(ulCrcFail));
                     ul_bler = isNaN(ul_bler) ? "NaN" : ul_bler.toFixed(4);
                     ul_bler = ul_bler.toString().padEnd(8);
                 } catch (error) {
                     var ul_bler = "NaN".padEnd(8);
-            console.log("Error calculating UL-BLER at line " + (index + 1), error);
                 }
 
                 ulMcs = values[22].padEnd(8);
