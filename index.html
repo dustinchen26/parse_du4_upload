@@ -109,8 +109,11 @@
         var totalChunks = 0;
         var processedChunks = 0;
 
+        // Declare parsedContent as a global variable
+        var parsedContent = "";
+
         function parseFile(file) {
-    // Reset the content and progress before starting the file parsing
+            // Reset content and progress before starting the file parsing
     resetContent();
 
             fileSize = file.size;
@@ -135,6 +138,8 @@
                     } else {
                         // Once all chunks are processed, update the status to 'Finish'
                         document.getElementById('uploadText').innerText = 'Finish';
+//Triggerdownloadafterparsingiscomplete
+downloadParsedContent();
                         }
                     } else {
                         console.error("Read error: " + e.target.error);
@@ -187,6 +192,10 @@
                 }
             }
 
+            // Append the parsed data to parsedContent
+            parsedContent += output;
+
+            // Update the displayed output on the page
             var currentOutput = document.getElementById('output').innerHTML;
             document.getElementById('output').innerHTML = currentOutput + output;
         }
@@ -315,6 +324,46 @@
             document.getElementById('uploadText').style.display = "block";
         }
 
+
+        // Function to trigger       download
+function downloadParsedContent() {
+    if (parsedContent.trim() === "") {
+        console.error("No content to download.");
+        return;
+    }
+
+    // Wrap parsed content in basic HTML structure
+    var htmlContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Parsed DU Stats</title>
+        <style>
+            body { font-family: 'Roboto', sans-serif; font-size: 14px; }
+            .ue-id { color: green; }
+            .dl-tpt { color: blue; }
+            .dl-bler { color: blue; }
+            .ul-tpt { color: red; }
+            .ul-bler { color: red; }
+        </style>
+    </head>
+    <body>
+        <h2>Parsed DU Stats</h2>
+        <pre>${parsedContent}</pre>
+    </body>
+    </html>
+    `;
+
+    var blob = new Blob([htmlContent], { type: 'text/html' });
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'parsed_du_stats.html';
+    link.click();
+}
+
+
 function printContent() {
     window.print();  // This triggers the browser's built-in print dialog
 }
@@ -347,6 +396,7 @@ function printContent() {
     <input type="file" id="fileInput" style="display:none" onchange="parseFile(this.files[0]);">
 
     <div id="output"></div>
+
 
 </body>
 </html>
