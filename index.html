@@ -14,7 +14,7 @@
     <style>
         body {
             font-family: 'Roboto', sans-serif;
-            line-height: 1.2;
+            line-height: 1;
             font-size: 14px;
         }
 
@@ -87,10 +87,20 @@
             color: gray;
         }
 
-        #button-container {
-            flex: 1; /* 將 Print To PDF 按鈕佔據進度條的五分之一 */
-            margin-top: 10px;
-            text-align: center;
+#button-container {
+    display: flex; /* Use flexbox to align buttons horizontally */
+    justify-content: flex-start; /* Align buttons to the left */
+    gap: 10px; /* Adds space between buttons */
+    margin-top: 10px;
+}
+
+        /* Reduce padding for buttons */
+        #fileInputBtn {
+            padding: 5px 10px; /* Smaller padding */
+        }
+
+        #printBtn {
+            padding: 5px 10px; /* Smaller padding */
         }
     </style>
     <script>
@@ -100,6 +110,9 @@
         var processedChunks = 0;
 
         function parseFile(file) {
+    // Reset the content and progress before starting the file parsing
+    resetContent();
+
             fileSize = file.size;
             totalChunks = Math.ceil(fileSize / chunkSize);
             processedChunks = 0;
@@ -119,6 +132,9 @@
 
                         if (offset < fileSize) {
                             setTimeout(readChunk, 0); // Non-blocking read
+                    } else {
+                        // Once all chunks are processed, update the status to 'Finish'
+                        document.getElementById('uploadText').innerText = 'Finish';
                         }
                     } else {
                         console.error("Read error: " + e.target.error);
@@ -137,6 +153,11 @@
             var percent = (processed / total) * 100;
             document.getElementById('bar').style.width = percent + '%';
             document.getElementById('bar').innerHTML = percent.toFixed(0) + '%';
+
+        // If all chunks are processed, change status text to 'Finish'
+        if (processed === totalChunks) {
+            document.getElementById('uploadText').innerText = 'Finish';
+        }
         }
 
         // Process content from the file chunk
@@ -253,8 +274,7 @@
                     dl_bler = isNaN(dl_bler) ? "NaN" : dl_bler.toFixed(4);
                     dl_bler = dl_bler.toString().padEnd(8);
                 } catch (error) {
-                    var dl_bler = "NaN".padEnd(8);
-            console.log("Error calculating DL-BLER at line " + (index + 1), error);
+                    console.error(error);
                 }
 
                 dlMcs = values[13].padEnd(8);
@@ -266,28 +286,39 @@
                     ul_bler = isNaN(ul_bler) ? "NaN" : ul_bler.toFixed(4);
                     ul_bler = ul_bler.toString().padEnd(8);
                 } catch (error) {
-                    var ul_bler = "NaN".padEnd(8);
-            console.log("Error calculating UL-BLER at line " + (index + 1), error);
+                    console.error(error);
                 }
 
                 ulMcs = values[22].padEnd(8);
-                output += "<span class='ue-id'>UE-ID=" + ueId + "</span>ACK-TB[0]=" + ACK_TB0 + "NACK-TB[0]=" +
-                    NACK_TB0 +
-                    "<span class='dl-bler'>DL-BLER=" + dl_bler + "</span>DL-MCS=" +
-                    dlMcs +
-                    "UL-CRC-SUCC=" + ulCrcSucc + "UL-CRC-FAIL=" + ulCrcFail + "<span class='ul-bler'>UL-BLER=" +
-                    ul_bler + "</span>UL-MCS=" + ulMcs +
-                    "\n";
+
+                output += "<span class='ue-id'>UE-ID=" + ueId + "</span>ACK-TB[0]=" + ACK_TB0 + "NACK-TB[0]=" + NACK_TB0 +
+                    "<span class='dl-bler'>DL-BLER=" + dl_bler + "</span>DL-MCS=" + dlMcs +
+                    "UL-CRC-SUCC=" + ulCrcSucc + "UL-CRC-FAIL=" + ulCrcFail + "<span class='ul-bler'>UL-BLER=" + ul_bler +
+                    "</span>UL-MCS=" + ulMcs + "\n";
+
                 index++;
             }
-
             return output;
         }
 
-        // Function to print the output to PDF
-        function printToPDF() {
-            window.print();
+        // Reset content when resetting
+        function resetContent() {
+    // Clear the output area
+            document.getElementById('output').innerHTML = "";
+
+    // Reset the progress bar
+            document.getElementById('bar').style.width = "0%";
+            document.getElementById('bar').innerHTML = "0%";
+
+    // Set the status text to 'Uploading...'
+    document.getElementById('uploadText').innerText = 'Uploading...';
+            document.getElementById('uploadText').style.display = "block";
         }
+
+function printContent() {
+    window.print();  // This triggers the browser's built-in print dialog
+}
+
     </script>
 </head>
 
@@ -305,22 +336,17 @@
                 <div id="progress">
             <div id="bar">0%</div>
                 </div>
-        <div id="uploadText">0% progress</div>
+        <div id="uploadText">Uploading...</div>
     </div>
 
-    <button id="fileInputBtn">Upload File</button>
-    <input type="file" id="fileInput" style="display:none;" accept=".txt" onchange="parseFile(this.files[0])" />
-    <div id="output"></div>
-
                 <div id="button-container">
-        <button onclick="printToPDF()">Print</button>
+        <button id="fileInputBtn" onclick="document.getElementById('fileInput').click();">Upload</button>
+        <button id="printBtn" onclick="printContent();">Print</button>
                 </div>
 
-    <script>
-        document.getElementById('fileInputBtn').addEventListener('click', function () {
-            document.getElementById('fileInput').click();
-        });
-    </script>
-</body>
+    <input type="file" id="fileInput" style="display:none" onchange="parseFile(this.files[0]);">
 
+    <div id="output"></div>
+
+</body>
 </html>
