@@ -202,9 +202,11 @@
             // Append the parsed data to parsedContent
             parsedContent += output;
 
-            // Update the displayed output on the page
+    // Update the displayed output on the page in bulk
+    if (processedChunks % 10 === 0) { // Update DOM every 10 chunks to reduce DOM manipulations
             var currentOutput = document.getElementById('output').innerHTML;
             document.getElementById('output').innerHTML = currentOutput + output;
+    }
 
             // Clear intermediate output from memory if necessary (optional)
             output = null;  // Release the memory used by this chunk's output
@@ -318,8 +320,8 @@
 
         function resetContent() {
             document.getElementById('output').innerHTML = '';
-            document.getElementById('bar').style.width = '0%';
             document.getElementById('uploadText').innerText = 'Processing...';
+    parsedContent = ''; // Reset parsed content
         }
 
         function downloadParsedContent() {
