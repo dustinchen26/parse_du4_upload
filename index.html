@@ -1,3 +1,9 @@
+<!-- 
+  Copyright © [2023] [Dustin_Chen]. All rights reserved.
+  Author: Dustin_Chen 陳智禮
+  Email:  Dustin_Chen@compal.com or chuhpsdustin@gmail.com
+-->
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -94,6 +100,12 @@
 
         #fileInput {
             display: none;
+        }
+
+        #intro {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #555;
         }
     </style>
     <script>
@@ -327,7 +339,19 @@
 </head>
 
 <body>
-    <h1>Parse du_stats_XXX.txt for each UE Time DL/UL Tput, BLER and MCS</h1>
+    <h2>Parse du_stats_XXX.txt for each UE Time DL/UL Tput, BLER and MCS</h2>
+    <p style="margin: 0;">Author: Dustin_Chen, email: <a href="mailto:Dustin_Chen@compal.com"
+            style="line-height: 1;">Dustin_Chen@compal.com</a> or <a href="mailto:chuhpsdustin@gmail.com"
+            style="line-height: 1;">chuhpsdustin@gmail.com</a></p>
+        
+    <!-- New content added below the title -->
+    <div id="intro">
+        <p>Please upload the du_stats_XXX.txt file below, then it will parse the DL/UL Tput, BLER, MCS.</p>
+        <ul>
+            <li>Formula 1: DL-BLER = NACK-TB[0] / (ACK-TB[0] + NACK-TB[0] )</li>
+            <li>Formula 2: UL-BLER = UL-CRC-FAIL / (UL-CRC-SUCC + UL-CRC-FAIL)</li>
+        </ul>
+    </div>
 
     <div id="progress-container">
         <div id="progress">
