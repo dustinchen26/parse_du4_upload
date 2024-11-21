@@ -1,9 +1,3 @@
-<!--
-  Copyright © [2023] [Dustin_Chen]. All rights reserved.
-  Author: Dustin_Chen
-  Email:  Dustin_Chen@compal.com or chuhpsdustin@gmail.com
--->
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -24,12 +18,10 @@
             font-size: 13px;
         }
 
-        /* 將連結文字設為藍色 */
         a {
             color: blue;
         }
 
-        /* 將UE-ID文字設為綠色 */
         #output span.ue-id {
             color: green;
         }
@@ -50,10 +42,8 @@
             color: red;
         }
 
-        /* Added style for buttons */
         button {
             font-size: 13px;
-            /* Adjust the font size as needed */
         }
 
         #progress-container {
@@ -63,7 +53,7 @@
         }
 
         #progress {
-            flex: 4; /* 進度條寬度縮短為原來的五分之一 */
+            flex: 4;
             background-color: #f3f3f3;
             height: 20px;
             border-radius: 5px;
@@ -81,26 +71,29 @@
         }
 
         #uploadText {
-            flex: 1; /* 將文字和上傳按鈕佔據進度條的五分之一 */
+            flex: 1;
             text-align: center;
             padding: 10px;
             color: gray;
         }
 
-#button-container {
-    display: flex; /* Use flexbox to align buttons horizontally */
-    justify-content: flex-start; /* Align buttons to the left */
-    gap: 10px; /* Adds space between buttons */
-    margin-top: 10px;
-}
+        #button-container {
+            display: flex;
+            justify-content: flex-start;
+            gap: 10px;
+            margin-top: 10px;
+        }
 
-        /* Reduce padding for buttons */
         #fileInputBtn {
-            padding: 5px 10px; /* Smaller padding */
+            padding: 5px 10px;
         }
 
         #printBtn {
-            padding: 5px 10px; /* Smaller padding */
+            padding: 5px 10px;
+        }
+
+        #fileInput {
+            display: none;
         }
     </style>
     <script>
@@ -108,16 +101,22 @@
         var fileSize = 0;
         var totalChunks = 0;
         var processedChunks = 0;
+        var parsedContent = ""; // To store the parsed output
 
-        // Declare parsedContent as a global variable
-        var parsedContent = "";
+        function triggerFileInput() {
+            document.getElementById('fileInput').click(); // Trigger file selection dialog
+        }
+
+        function handleFileSelection() {
+            var file = document.getElementById('fileInput').files[0];
+            if (file) {
+                parseFile(file);
+            }
+        }
 
         function parseFile(file) {
-            // Reset content and progress before starting the file parsing
-    resetContent();
-
-    // Clear previous parsed content
-    parsedContent = "";  // Reset the parsed content
+            // Reset previous content and progress
+            resetContent();
 
             fileSize = file.size;
             totalChunks = Math.ceil(fileSize / chunkSize);
@@ -125,7 +124,7 @@
 
             var offset = 0;
 
-            // Function to read a chunk
+            // Function to read a chunk from the file
             function readChunk() {
                 var reader = new FileReader();
                 reader.onload = function (e) {
@@ -136,13 +135,12 @@
                         processedChunks++;
                         updateProgress(processedChunks, totalChunks);
 
+                        // If there are still chunks to process, keep reading
                         if (offset < fileSize) {
                             setTimeout(readChunk, 0); // Non-blocking read
-                    } else {
-                        // Once all chunks are processed, update the status to 'Finish'
-                        document.getElementById('uploadText').innerText = 'Finish';
-//Triggerdownloadafterparsingiscomplete
-downloadParsedContent();
+                        } else {
+                            document.getElementById('uploadText').innerText = 'Finish';
+                            downloadParsedContent(); // Trigger download after parsing is complete
                         }
                     } else {
                         console.error("Read error: " + e.target.error);
@@ -153,22 +151,16 @@ downloadParsedContent();
                 reader.readAsText(chunk);
             }
 
-            readChunk();
+            readChunk(); // Start reading the first chunk
         }
 
-        // Update progress bar based on processed chunks
         function updateProgress(processed, total) {
             var percent = (processed / total) * 100;
             document.getElementById('bar').style.width = percent + '%';
             document.getElementById('bar').innerHTML = percent.toFixed(0) + '%';
-
-        // If all chunks are processed, change status text to 'Finish'
-        if (processed === totalChunks) {
-            document.getElementById('uploadText').innerText = 'Finish';
-        }
         }
 
-        // Process content from the file chunk
+        // Parse the content from a chunk and update parsedContent
         function parseContent(inputText) {
             var lines = inputText.split('\n');
             var output = "";
@@ -201,9 +193,11 @@ downloadParsedContent();
             // Update the displayed output on the page
             var currentOutput = document.getElementById('output').innerHTML;
             document.getElementById('output').innerHTML = currentOutput + output;
+
+            // Clear intermediate output from memory if necessary (optional)
+            output = null;  // Release the memory used by this chunk's output
         }
 
-        // Parse UE data from a specific line
         function parseUEData(lines, index) {
             var output = "";
             var values = lines[index].trim().split(/\s+/);
@@ -235,46 +229,43 @@ downloadParsedContent();
             return output;
         }
 
-        // Parse Cell data from a specific line
         function parseCellData(lines, index) {
             var output = "";
             var values = lines[index].trim().split(/\s+/);
-    
-    if (values.length < 23) {
-                return output;  // Skip malformed line
-    }
+
+            if (values.length < 23) {
+                return output; // Skip malformed line
+            }
 
             var ueId = values[0].padEnd(8);
             var ACK_TB0 = values[5].padEnd(8);
             var NACK_TB0 = values[6].padEnd(8);
 
-                var dl_bler = parseFloat(NACK_TB0) / (parseFloat(ACK_TB0) + parseFloat(NACK_TB0));
-                dl_bler = isNaN(dl_bler) ? "NaN" : dl_bler.toFixed(4);
-                dl_bler = dl_bler.toString().padEnd(8);
+            var dl_bler = parseFloat(NACK_TB0) / (parseFloat(ACK_TB0) + parseFloat(NACK_TB0));
+            dl_bler = isNaN(dl_bler) ? "NaN" : dl_bler.toFixed(4);
+            dl_bler = dl_bler.toString().padEnd(8);
 
             var dlMcs = values[13].padEnd(8);
             var ulCrcSucc = values[18].padEnd(8);
             var ulCrcFail = values[19].padEnd(8);
 
-                var ul_bler = parseFloat(ulCrcFail) / (parseFloat(ulCrcSucc) + parseFloat(ulCrcFail));
-                ul_bler = isNaN(ul_bler) ? "NaN" : ul_bler.toFixed(4);
-                ul_bler = ul_bler.toString().padEnd(8);
+            var ul_bler = parseFloat(ulCrcFail) / (parseFloat(ulCrcSucc) + parseFloat(ulCrcFail));
+            ul_bler = isNaN(ul_bler) ? "NaN" : ul_bler.toFixed(4);
+            ul_bler = ul_bler.toString().padEnd(8);
 
             var ulMcs = values[22].padEnd(8);
 
             output += "<span class='ue-id'>UE-ID=" + ueId + "</span>ACK-TB[0]=" + ACK_TB0 + "NACK-TB[0]=" + NACK_TB0 +
                 "<span class='dl-bler'>DL-BLER=" + dl_bler + "</span>DL-MCS=" + dlMcs +
                 "UL-CRC-SUCC=" + ulCrcSucc + "UL-CRC-FAIL=" + ulCrcFail + "<span class='ul-bler'>UL-BLER=" + ul_bler +
-                "</span>UL-MCS=" + ulMcs +
-                "\n";
+                "</span>UL-MCS=" + ulMcs + "\n";
 
             index++;
             while (index < lines.length && /^\d/.test(lines[index].trim())) {
-        // Skip empty or malformed lines
-        if (lines[index].trim() === "" || lines[index].split(/\s+/).length < 23) {
-            index++;
-            continue;
-        }
+                if (lines[index].trim() === "" || lines[index].split(/\s+/).length < 23) {
+                    index++;
+                    continue;
+                }
 
                 values = lines[index].trim().split(/\s+/);
                 ueId = values[0].padEnd(8);
@@ -282,7 +273,7 @@ downloadParsedContent();
                 NACK_TB0 = values[6].padEnd(8);
 
                 try {
-                    var dl_bler = parseFloat(NACK_TB0) / (parseFloat(ACK_TB0) + parseFloat(NACK_TB0));
+                    dl_bler = parseFloat(NACK_TB0) / (parseFloat(ACK_TB0) + parseFloat(NACK_TB0));
                     dl_bler = isNaN(dl_bler) ? "NaN" : dl_bler.toFixed(4);
                     dl_bler = dl_bler.toString().padEnd(8);
                 } catch (error) {
@@ -294,7 +285,7 @@ downloadParsedContent();
                 ulCrcFail = values[19].padEnd(8);
 
                 try {
-                    var ul_bler = parseFloat(ulCrcFail) / (parseFloat(ulCrcSucc) + parseFloat(ulCrcFail));
+                    ul_bler = parseFloat(ulCrcFail) / (parseFloat(ulCrcSucc) + parseFloat(ulCrcFail));
                     ul_bler = isNaN(ul_bler) ? "NaN" : ul_bler.toFixed(4);
                     ul_bler = ul_bler.toString().padEnd(8);
                 } catch (error) {
@@ -307,99 +298,51 @@ downloadParsedContent();
                     "<span class='dl-bler'>DL-BLER=" + dl_bler + "</span>DL-MCS=" + dlMcs +
                     "UL-CRC-SUCC=" + ulCrcSucc + "UL-CRC-FAIL=" + ulCrcFail + "<span class='ul-bler'>UL-BLER=" + ul_bler +
                     "</span>UL-MCS=" + ulMcs + "\n";
-
                 index++;
             }
+
             return output;
         }
 
-        // Reset content when resetting
         function resetContent() {
-    // Clear the output area
-            document.getElementById('output').innerHTML = "";
-
-    // Reset the progress bar
-            document.getElementById('bar').style.width = "0%";
-            document.getElementById('bar').innerHTML = "0%";
-
-    // Set the status text to 'Uploading...'
-    document.getElementById('uploadText').innerText = 'Uploading...';
-            document.getElementById('uploadText').style.display = "block";
+            document.getElementById('output').innerHTML = '';
+            document.getElementById('bar').style.width = '0%';
+            document.getElementById('uploadText').innerText = 'Processing...';
         }
 
+        function downloadParsedContent() {
+    // Remove HTML tags from the parsed content
+    var plainTextContent = parsedContent.replace(/<\/?[^>]+(>|$)/g, "");
+    
+    // Create a blob with the plain text content
+    var blob = new Blob([plainTextContent], { type: 'text/plain;charset=utf-8' });
 
-        // Function to trigger       download
-function downloadParsedContent() {
-    if (parsedContent.trim() === "") {
-        console.error("No content to download.");
-        return;
-    }
-
-    // Wrap parsed content in basic HTML structure
-    var htmlContent = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Parsed DU Stats</title>
-        <style>
-            body { font-family: 'Roboto', sans-serif; font-size: 14px; }
-            .ue-id { color: green; }
-            .dl-tpt { color: blue; }
-            .dl-bler { color: blue; }
-            .ul-tpt { color: red; }
-            .ul-bler { color: red; }
-        </style>
-    </head>
-    <body>
-        <h2>Parsed DU Stats</h2>
-        <pre>${parsedContent}</pre>
-    </body>
-    </html>
-    `;
-
-    var blob = new Blob([htmlContent], { type: 'text/html' });
-    var link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'parsed_du_stats.html';
-    link.click();
-}
-
-
-function printContent() {
-    window.print();  // This triggers the browser's built-in print dialog
-}
-
+    // Create a temporary link element for downloading the file
+            var link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'parsed_output.txt';
+            link.click();
+        }
     </script>
 </head>
 
 <body>
-    <h2>Parse du_stats_XXX.txt for each UE Time DL/UL Tput, BLER and MCS</h2>
-    <p style="margin: 0;">Author: Dustin_Chen, email: <a href="mailto:Dustin_Chen@compal.com"
-            style="line-height: 1;">Dustin_Chen@compal.com</a> or <a href="mailto:chuhpsdustin@gmail.com"
-            style="line-height: 1;">chuhpsdustin@gmail.com</a></p>
-    
-    <p>Please upload the du_stats_XXX.txt file below, then it will parse the DL/UL Tput, BLER, MCS.</p>
-    <p><strong>Formula 1:</strong> DL-BLER = NACK-TB[0] / (NACK-TB[0] + ACK-TB[0])</p>
-    <p><strong>Formula 2:</strong> UL-BLER = UL-CRC-FAIL / (UL-CRC-SUCC + UL-CRC-FAIL)</p>
-    
-            <div id="progress-container">
-                <div id="progress">
-            <div id="bar">0%</div>
-                </div>
-        <div id="uploadText">Uploading...</div>
+    <h1>Parse du_stats_XXX.txt for each UE Time DL/UL Tput, BLER and MCS</h1>
+
+    <div id="progress-container">
+        <div id="progress">
+            <div id="bar"></div>
+        </div>
+        <div id="uploadText">Ready</div>
     </div>
 
-                <div id="button-container">
-        <button id="fileInputBtn" onclick="document.getElementById('fileInput').click();">Upload</button>
-        <button id="printBtn" onclick="printContent();">Print</button>
-                </div>
-
-    <input type="file" id="fileInput" style="display:none" onchange="parseFile(this.files[0]);">
+    <!-- File input hidden, triggered by button -->
+    <input type="file" id="fileInput" accept=".txt" style="display: none;" onchange="handleFileSelection()" />
+    
+    <!-- Single button to trigger file input and start parsing -->
+    <button id="printBtn" onclick="triggerFileInput()">Choose File and Start Parsing</button>
 
     <div id="output"></div>
-
-
 </body>
+
 </html>
