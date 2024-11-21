@@ -114,6 +114,7 @@
         var totalChunks = 0;
         var processedChunks = 0;
         var parsedContent = ""; // To store the parsed output
+        var inputFileName = ""; // To store the input file name
 
         function triggerFileInput() {
             document.getElementById('fileInput').click(); // Trigger file selection dialog
@@ -122,6 +123,7 @@
         function handleFileSelection() {
             var file = document.getElementById('fileInput').files[0];
             if (file) {
+                inputFileName = file.name; // Store the name of the input file
                 parseFile(file);
             }
         }
@@ -325,17 +327,29 @@
         }
 
         function downloadParsedContent() {
-    // Remove HTML tags from the parsed content
+            // Get the input file name
+            var file = document.getElementById('fileInput').files[0];
+            if (!file) {
+                console.error("No file selected for download.");
+                return;
+            }
+            
+            var originalFileName = file.name.split('.')[0];  // Extract the base file name (without extension)
+            
+            // Append '_parse_result' to the original file name and set the new filename
+            var newFileName = originalFileName + "_parse_result.txt";
+            
+            // Remove HTML tags from the parsed content to create plain text
     var plainTextContent = parsedContent.replace(/<\/?[^>]+(>|$)/g, "");
     
-    // Create a blob with the plain text content
+            // Create a Blob object for the plain text content
     var blob = new Blob([plainTextContent], { type: 'text/plain;charset=utf-8' });
 
     // Create a temporary link element for downloading the file
             var link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = 'parsed_output.txt';
-            link.click();
+            link.download = newFileName;  // Set the download name to the new file name with _parse_result
+            link.click();  // Trigger the download
         }
     </script>
 </head>
