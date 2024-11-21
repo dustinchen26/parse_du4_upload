@@ -116,6 +116,9 @@
             // Reset content and progress before starting the file parsing
     resetContent();
 
+    // Clear previous parsed content
+    parsedContent = "";  // Reset the parsed content
+
             fileSize = file.size;
             totalChunks = Math.ceil(fileSize / chunkSize);
             processedChunks = 0;
